@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.4">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="zh-TW"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;對沖基金追蹤&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Bootstrap 5 輕量樣式 --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Chart.js 圖表 --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- PapaParse CSV 解析 --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body { padding: 20px; background: #f8f9fa; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.container { max-width: 1400px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.fund-link { cursor: pointer; color: #0d6efd; text-decoration: underline; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.fund-link:hover { color: #0a58ca; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.back-btn { margin-bottom: 20px; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.table th { background: #e9ecef; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.negative { color: #dc3545; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.positive { color: #198754; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#navChart { max-height: 400px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1">&lt;div class="container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="homeView"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;h2 class="mb-4"&gt;對沖基金總覽（報告）&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="table-responsive"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;table class="table table-bordered table-hover" id="reportTable"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;thead id="tableHeader"&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;tbody id="tableBody"&gt;&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/table&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p class="text-muted mt-3"&gt;* 點擊基金名稱查看詳細淨值走勢&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="detailView" style="display: none;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button class="btn btn-secondary back-btn" onclick="showHome()"&gt;← 返回總覽&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;h3 id="fundNameTitle"&gt;&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="row"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="col-md-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;canvas id="navChart"&gt;&lt;/canvas&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="col-md-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;h5&gt;近期淨值&lt;/h5&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="table-responsive"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;table class="table table-sm table-striped" id="recentNavTable"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;thead&gt;&lt;tr&gt;&lt;th&gt;日期&lt;/th&gt;&lt;th&gt;淨值&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;tbody&gt;&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/table&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1">&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>// ---------- 設定區：請換成你的 Google Sheets 發佈 CSV 網址 ----------</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const REPORT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQZFPOi9JsLAfvk-rVUjcuZhltMnLphARmc39uiFAAjniiMyN9K3Q0ZwOri64AoSBJ9NOHrwUNbRQKE/pub?gid=2145666162&amp;single=true&amp;output=csv'; <span class="Apple-converted-space">  </span>// 報告工作表</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const NAV_CSV_URL<span class="Apple-converted-space">    </span>= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQZFPOi9JsLAfvk-rVUjcuZhltMnLphARmc39uiFAAjniiMyN9K3Q0ZwOri64AoSBJ9NOHrwUNbRQKE/pub?gid=1794486467&amp;single=true&amp;output=csv'; <span class="Apple-converted-space">  </span>// 基金淨值工作表</p>
+<p class="p1"><span class="Apple-converted-space">    </span>// -----------------------------------------------------------------</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let reportData = [];<span class="Apple-converted-space">          </span>// 報告資料陣列 (物件陣列)</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let navData = {}; <span class="Apple-converted-space">            </span>// 基金淨值資料: { 基金名稱: { dates: [], navs: [] } }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let chartInstance = null;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// 頁面載入時同時取得兩個 CSV</p>
+<p class="p1"><span class="Apple-converted-space">    </span>Promise.all([</p>
+<p class="p1"><span class="Apple-converted-space">        </span>fetch(REPORT_CSV_URL).then(res =&gt; res.text()),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>fetch(NAV_CSV_URL).then(res =&gt; res.text())</p>
+<p class="p1"><span class="Apple-converted-space">    </span>]).then(([reportCsv, navCsv]) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>parseReport(reportCsv);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>parseNav(navCsv);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>renderReportTable();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}).catch(err =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>console.error('讀取 CSV 失敗', err);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>alert('無法載入資料，請確認 CSV 網址是否正確，或稍後再試。');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// ---------- 解析報告 CSV ----------</p>
+<p class="p1"><span class="Apple-converted-space">    </span>function parseReport(csv) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const parsed = PapaParse.parse(csv, { header: false, skipEmptyLines: true });</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const rows = parsed.data;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 尋找標題列：通常包含「對沖基⾦」、「投资日期」等關鍵字</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let headerRowIndex = -1;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; rows.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const row = rows[i];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (row.length &gt; 5 &amp;&amp; row[1] &amp;&amp; row[1].includes('對沖基⾦')) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>headerRowIndex = i;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>break;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (headerRowIndex === -1) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>console.warn('無法找到報告標題列，使用第一列作為標題');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>headerRowIndex = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const headers = rows[headerRowIndex];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 資料列從 headerRowIndex + 1 開始，且第一欄必須是數字 (基金編號)</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const dataRows = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = headerRowIndex + 1; i &lt; rows.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const row = rows[i];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (row.length === 0) continue;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const firstCell = row[0] ? row[0].toString().trim() : '';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (/^\d+$/.test(firstCell)) { <span class="Apple-converted-space">  </span>// 第一欄為數字才視為基金資料列</p>
+<p class="p1"><span class="Apple-converted-space">                </span>dataRows.push(row);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 建立物件陣列</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reportData = dataRows.map(row =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const obj = {};</p>
+<p class="p1"><span class="Apple-converted-space">            </span>headers.forEach((h, idx) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (h &amp;&amp; h.trim()) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>obj[h.trim()] = row[idx] ? row[idx].trim() : '';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>});</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return obj;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// ---------- 解析基金淨值 CSV ----------</p>
+<p class="p1"><span class="Apple-converted-space">    </span>function parseNav(csv) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const parsed = PapaParse.parse(csv, { header: false, skipEmptyLines: true });</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const rows = parsed.data;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let i = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>while (i &lt; rows.length) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const row = rows[i];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (row.length === 0) { i++; continue; }</p>
+<p class="p1"><span class="Apple-converted-space">            </span>// 尋找基金名稱列 (例如以數字開頭且包含「基金」)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const firstCell = row[0] ? row[0].toString().trim() : '';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (/^\d/.test(firstCell) &amp;&amp; firstCell.includes('基金')) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// 基金名稱：去掉前面的數字與空格</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let fundName = firstCell.replace(/^\d+\s*/, '').trim();</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// 日期列：從 H 欄 (索引 7) 開始</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const dateRow = rows[i]; <span class="Apple-converted-space">          </span>// 同一行，H欄以後是日期</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const navRow = rows[i + 1]; <span class="Apple-converted-space">        </span>// 下一行是對應淨值</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (!navRow) { i++; continue; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>const dates = [];</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const navs = [];</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// 從索引 7 開始，直到遇到空值</p>
+<p class="p1"><span class="Apple-converted-space">                </span>for (let col = 7; col &lt; dateRow.length; col++) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const dateStr = dateRow[col] ? dateRow[col].trim() : '';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>const navStr = navRow[col] ? navRow[col].trim() : '';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if (dateStr &amp;&amp; navStr &amp;&amp; !isNaN(parseFloat(navStr))) {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>// 嘗試解析日期 (簡單過濾)</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>if (dateStr.includes('-') || dateStr.includes('/')) {</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>dates.push(dateStr);</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>navs.push(parseFloat(navStr));</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>break;<span class="Apple-converted-space">  </span>// 遇到空欄位結束</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (dates.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>navData[fundName] = { dates, navs };</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>i += 3;<span class="Apple-converted-space">  </span>// 每個基金佔用三行 (名稱行、淨值行、額外行)，跳過</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>i++;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// ---------- 渲染報告表格 ----------</p>
+<p class="p1"><span class="Apple-converted-space">    </span>function renderReportTable() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (reportData.length === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('tableBody').innerHTML = '&lt;tr&gt;&lt;td colspan="10"&gt;無資料&lt;/td&gt;&lt;/tr&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 建立表頭 (取第一個物件的鍵，並過濾掉空欄位)</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const headers = Object.keys(reportData[0]).filter(h =&gt; h &amp;&amp; h.trim() !== '');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const thead = document.getElementById('tableHeader');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>thead.innerHTML = '&lt;tr&gt;' + headers.map(h =&gt; `&lt;th&gt;${h}&lt;/th&gt;`).join('') + '&lt;/tr&gt;';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 建立表身</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tbody = document.getElementById('tableBody');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>tbody.innerHTML = reportData.map(row =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return '&lt;tr&gt;' + headers.map(h =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let val = row[h] || '';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// 簡單標記負值（可依需求調整）</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (h.includes('回報') || h.includes('盈虧') || h.includes('變動')) {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if (val.startsWith('-')) val = `&lt;span class="negative"&gt;${val}&lt;/span&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>else if (val &amp;&amp; val !== '0' &amp;&amp; val !== '0%') val = `&lt;span class="positive"&gt;${val}&lt;/span&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>// 將基金名稱加上可點擊連結</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if (h === '對沖基⾦') {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>val = `&lt;span class="fund-link" onclick="showFundDetail('${row[h]}')"&gt;${val}&lt;/span&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>return `&lt;td&gt;${val}&lt;/td&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}).join('') + '&lt;/tr&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}).join('');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// ---------- 顯示基金詳情 ----------</p>
+<p class="p1"><span class="Apple-converted-space">    </span>window.showFundDetail = function(fundName) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 從 navData 尋找匹配的基金名稱 (可能因空格或括號略有不同，用 includes 寬鬆比對)</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let matchedKey = null;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let key in navData) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (fundName.includes(key) || key.includes(fundName)) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>matchedKey = key;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>break;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!matchedKey) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>alert('找不到該基金的淨值資料');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const fund = navData[matchedKey];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('homeView').style.display = 'none';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('detailView').style.display = 'block';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('fundNameTitle').innerText = fundName;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 渲染近期淨值表格 (最近 10 筆)</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const recentTbody = document.querySelector('#recentNavTable tbody');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const rows = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = fund.dates.length - 1; i &gt;= Math.max(0, fund.dates.length - 10); i--) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>rows.push(`&lt;tr&gt;&lt;td&gt;${fund.dates[i]}&lt;/td&gt;&lt;td&gt;${fund.navs[i].toFixed(2)}&lt;/td&gt;&lt;/tr&gt;`);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>recentTbody.innerHTML = rows.join('');</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// 繪製圖表</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const ctx = document.getElementById('navChart').getContext('2d');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (chartInstance) chartInstance.destroy();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>chartInstance = new Chart(ctx, {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>type: 'line',</p>
+<p class="p1"><span class="Apple-converted-space">            </span>data: {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>labels: fund.dates,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>datasets: [{</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>label: '淨值',</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>data: fund.navs,</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>borderColor: 'rgb(75, 192, 192)',</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>tension: 0.1,</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>fill: false</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}]</p>
+<p class="p1"><span class="Apple-converted-space">            </span>},</p>
+<p class="p1"><span class="Apple-converted-space">            </span>options: {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>responsive: true,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>maintainAspectRatio: false,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>plugins: {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>legend: { display: false },</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>tooltip: { mode: 'index', intersect: false }</p>
+<p class="p1"><span class="Apple-converted-space">                </span>},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>scales: {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>x: { display: true, title: { display: true, text: '日期' } },</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>y: { display: true, title: { display: true, text: '淨值' } }</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// 返回首頁</p>
+<p class="p1"><span class="Apple-converted-space">    </span>window.showHome = function() {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('homeView').style.display = 'block';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>document.getElementById('detailView').style.display = 'none';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (chartInstance) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>chartInstance.destroy();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>chartInstance = null;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;!-- 載入 Bootstrap JS (非必要，僅供某些互動) --&gt;</p>
+<p class="p1">&lt;script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
